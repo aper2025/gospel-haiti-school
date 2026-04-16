@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gospel Haiti International School — Management Platform
 
-## Getting Started
+Next.js 15 · Supabase (Postgres) + Prisma · Tailwind · next-intl (FR/EN) · PWA
 
-First, run the development server:
+**Deployment target:** `portal.gospelhaiti.org` (Coolify on Hostinger VPS
+`72.60.116.17`). See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full setup.
+
+## Modules (per spec)
+
+1. Student registration & profile (+ enrollment waitlist)
+2. Student attendance (P / L_E / L_U / A_E / A_U) with offline sync
+3. Academic tracking — gradebook, 4-level weekly groups, retention watch
+4. Behavior system (Levels 0–6) with parent contact log
+5. Fees & payments
+6. Staff management (observations, leave)
+7. Staff time clock (sign-in / sign-out)
+
+Dashboards for Director, Admin, Homeroom teachers, and Subject teachers.
+Weekly meeting prep reports for Wednesday (elementary KG2–4F) and Thursday
+(secondary 5F–9F) staff meetings.
+
+## Local development
 
 ```bash
+npm install
+cp .env.example .env        # then fill in Supabase values
+npx prisma generate
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# → http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Type-check: `npx tsc --noEmit`
+Production build: `npm run build`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Repo layout
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+prisma/schema.prisma        # full data model, all 7 modules
+src/app/                    # App Router pages + API routes
+src/app/api/health/         # health check (DB ping)
+src/i18n/                   # next-intl config, request handler
+src/lib/prisma.ts           # Prisma singleton
+src/lib/supabase.ts         # browser + server Supabase clients
+src/components/             # shared UI components
+messages/fr.json            # French strings (primary)
+messages/en.json            # English strings (secondary)
+public/manifest.webmanifest # PWA manifest
+public/sw.js                # service worker (app shell cache)
+DEPLOYMENT.md               # Supabase + Coolify deploy guide
+```
 
-## Learn More
+## Data source (migration)
 
-To learn more about Next.js, take a look at the following resources:
+Legacy data lives at `~/Downloads/Gospel Haiti/school-management-system/`
+(MySQL dump: `school_data_backup.sql`). Migration script at
+`scripts/migrate-legacy-data.ts` (Step 18 of the build — pending).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Migrates:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- 20 staff members (with existing 4-digit PINs)
+- 235 students across KG2, KG3, 1F–10F (10F imported per request, excluded
+  from standard workflows via `Class.excluded = true`)
+- 1 school year (`2025-26`, Sep–Jun)
+- 20 time-clock entries
 
-## Deploy on Vercel
+Does not migrate:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Old grade categories (replaced by new evaluation types)
+- Student attendance / behavior history (old tables are empty)

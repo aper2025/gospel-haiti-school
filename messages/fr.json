@@ -1,0 +1,166 @@
+{
+  "app": {
+    "name": "École Internationale Gospel Haïti",
+    "shortName": "GHIS",
+    "tagline": "Plateforme de gestion scolaire"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "students": "Élèves",
+    "attendance": "Présence",
+    "gradebook": "Carnet de notes",
+    "behavior": "Comportement",
+    "fees": "Frais et paiements",
+    "staff": "Personnel",
+    "timeClock": "Pointage",
+    "reports": "Rapports",
+    "settings": "Paramètres",
+    "signOut": "Se déconnecter"
+  },
+  "auth": {
+    "signIn": "Connexion",
+    "signOut": "Se déconnecter",
+    "email": "Courriel",
+    "password": "Mot de passe",
+    "pin": "Code PIN",
+    "submit": "Se connecter",
+    "invalidCredentials": "Identifiants invalides",
+    "welcome": "Bienvenue"
+  },
+  "roles": {
+    "DIRECTOR": "Directeur",
+    "ADMIN": "Administrateur",
+    "HOMEROOM_TEACHER": "Titulaire de classe",
+    "SUBJECT_TEACHER": "Enseignant spécialisé",
+    "ASSISTANT": "Assistant(e)",
+    "SUPPORT": "Support"
+  },
+  "classes": {
+    "KG2": "KG2",
+    "KG3": "KG3",
+    "F1": "1F",
+    "F2": "2F",
+    "F3": "3F",
+    "F4": "4F",
+    "F5": "5F",
+    "F6": "6F",
+    "F7": "7F",
+    "F8": "8F",
+    "F9": "9F",
+    "F10": "10F"
+  },
+  "attendance": {
+    "title": "Présence",
+    "markAll": "Marquer tout",
+    "codes": {
+      "P": "Présent",
+      "L_E": "Retard justifié",
+      "L_U": "Retard non justifié",
+      "A_E": "Absent justifié",
+      "A_U": "Absent non justifié"
+    },
+    "rate": "Taux de présence",
+    "chronic": "Absence chronique",
+    "below85": "En dessous de 85%",
+    "offlineMode": "Mode hors ligne",
+    "pendingSync": "{count} entrées en attente de synchronisation"
+  },
+  "gradebook": {
+    "title": "Carnet de notes",
+    "evaluationTypes": {
+      "PETITE_EVALUATION": "Petite évaluation",
+      "GRANDE_EVALUATION": "Grande évaluation",
+      "DICTEE": "Dictée",
+      "EXAMEN": "Examen",
+      "AUTRE": "Autre"
+    },
+    "groups": {
+      "G1": "Groupe 1 — En voie de réussite (80%+)",
+      "G2": "Groupe 2 — À surveiller (70–79%)",
+      "G3": "Groupe 3 — Intervention requise (40–69%)",
+      "G4": "Groupe 4 — Crise — tutorat obligatoire (<40%)"
+    },
+    "subjects": {
+      "LECTURE": "Lecture",
+      "MATHEMATIQUES": "Mathématiques",
+      "DICTEE_ORTHOGRAPHE": "Dictée / Orthographe",
+      "CONJUGAISON_GRAMMAIRE": "Conjugaison / Grammaire",
+      "SCIENCES": "Sciences",
+      "BIOLOGIE": "Biologie",
+      "PHYSIQUE": "Physique",
+      "HISTOIRE": "Histoire",
+      "GEOGRAPHIE": "Géographie",
+      "SCIENCES_SOCIALES": "Sciences Sociales",
+      "ANGLAIS": "Anglais",
+      "ESPAGNOL": "Espagnol",
+      "CREOLE": "Créole",
+      "MUSIQUE": "Musique"
+    },
+    "score": "Note",
+    "letterGrade": "Lettre",
+    "group": "Groupe",
+    "weeklyEntry": "Saisie hebdomadaire",
+    "retentionWatch": "Surveillance de redoublement"
+  },
+  "behavior": {
+    "title": "Comportement",
+    "currentLevel": "Niveau actuel",
+    "levels": {
+      "L0": "Niveau 0 — Aucun problème",
+      "L1": "Niveau 1 — Problème noté (conversation privée)",
+      "L2": "Niveau 2 — Répétition (suivi enseignant)",
+      "L3": "Niveau 3 — Continu (contact parent)",
+      "L4": "Niveau 4 — Administration impliquée",
+      "L5": "Niveau 5 — Rencontre formelle avec parents",
+      "L6": "Niveau 6 — Directeur impliqué"
+    },
+    "incidentLog": "Journal des incidents",
+    "parentContact": "Contact avec les parents"
+  },
+  "fees": {
+    "title": "Frais et paiements",
+    "schedule": "Barème des frais",
+    "payments": "Paiements",
+    "balance": "Solde",
+    "status": {
+      "PAID_IN_FULL": "Payé en totalité",
+      "PARTIAL": "Paiement partiel",
+      "UNPAID": "Non payé",
+      "OVERDUE": "En retard"
+    },
+    "overdue30": "En retard de plus de 30 jours"
+  },
+  "staff": {
+    "title": "Personnel",
+    "performance": {
+      "STANDARD": "Standard",
+      "NEEDS_SUPPORT": "Soutien requis",
+      "PROBATION": "En probation"
+    },
+    "observations": "Observations",
+    "leave": "Congés",
+    "timeClock": "Pointage"
+  },
+  "timeClock": {
+    "title": "Pointage",
+    "signIn": "Arrivée",
+    "signOut": "Départ",
+    "hoursWorked": "Heures travaillées",
+    "onSite": "Sur place",
+    "notSignedIn": "Non pointé"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "search": "Rechercher",
+    "loading": "Chargement...",
+    "noData": "Aucune donnée",
+    "yes": "Oui",
+    "no": "Non",
+    "date": "Date",
+    "actions": "Actions"
+  }
+}

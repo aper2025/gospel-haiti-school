@@ -1,0 +1,166 @@
+{
+  "app": {
+    "name": "Gospel Haiti International School",
+    "shortName": "GHIS",
+    "tagline": "School management platform"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "students": "Students",
+    "attendance": "Attendance",
+    "gradebook": "Gradebook",
+    "behavior": "Behavior",
+    "fees": "Fees & Payments",
+    "staff": "Staff",
+    "timeClock": "Time Clock",
+    "reports": "Reports",
+    "settings": "Settings",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "pin": "PIN",
+    "submit": "Sign in",
+    "invalidCredentials": "Invalid credentials",
+    "welcome": "Welcome"
+  },
+  "roles": {
+    "DIRECTOR": "Director",
+    "ADMIN": "Administrator",
+    "HOMEROOM_TEACHER": "Homeroom teacher",
+    "SUBJECT_TEACHER": "Subject teacher",
+    "ASSISTANT": "Assistant",
+    "SUPPORT": "Support"
+  },
+  "classes": {
+    "KG2": "KG2",
+    "KG3": "KG3",
+    "F1": "1F",
+    "F2": "2F",
+    "F3": "3F",
+    "F4": "4F",
+    "F5": "5F",
+    "F6": "6F",
+    "F7": "7F",
+    "F8": "8F",
+    "F9": "9F",
+    "F10": "10F"
+  },
+  "attendance": {
+    "title": "Attendance",
+    "markAll": "Mark all",
+    "codes": {
+      "P": "Present",
+      "L_E": "Late excused",
+      "L_U": "Late unexcused",
+      "A_E": "Absent excused",
+      "A_U": "Absent unexcused"
+    },
+    "rate": "Attendance rate",
+    "chronic": "Chronic absence",
+    "below85": "Below 85%",
+    "offlineMode": "Offline mode",
+    "pendingSync": "{count} entries pending sync"
+  },
+  "gradebook": {
+    "title": "Gradebook",
+    "evaluationTypes": {
+      "PETITE_EVALUATION": "Small quiz",
+      "GRANDE_EVALUATION": "Major test",
+      "DICTEE": "Dictation",
+      "EXAMEN": "Exam",
+      "AUTRE": "Other"
+    },
+    "groups": {
+      "G1": "Group 1 — On track (80%+)",
+      "G2": "Group 2 — Watch (70–79%)",
+      "G3": "Group 3 — Intervention needed (40–69%)",
+      "G4": "Group 4 — Crisis — mandatory tutoring (<40%)"
+    },
+    "subjects": {
+      "LECTURE": "Reading",
+      "MATHEMATIQUES": "Mathematics",
+      "DICTEE_ORTHOGRAPHE": "Dictation / Spelling",
+      "CONJUGAISON_GRAMMAIRE": "Conjugation / Grammar",
+      "SCIENCES": "Sciences",
+      "BIOLOGIE": "Biology",
+      "PHYSIQUE": "Physics",
+      "HISTOIRE": "History",
+      "GEOGRAPHIE": "Geography",
+      "SCIENCES_SOCIALES": "Social Sciences",
+      "ANGLAIS": "English",
+      "ESPAGNOL": "Spanish",
+      "CREOLE": "Creole",
+      "MUSIQUE": "Music"
+    },
+    "score": "Score",
+    "letterGrade": "Letter",
+    "group": "Group",
+    "weeklyEntry": "Weekly entry",
+    "retentionWatch": "Retention watch"
+  },
+  "behavior": {
+    "title": "Behavior",
+    "currentLevel": "Current level",
+    "levels": {
+      "L0": "Level 0 — No issues",
+      "L1": "Level 1 — Issue noted (private conversation)",
+      "L2": "Level 2 — Repeat (teacher follow-up)",
+      "L3": "Level 3 — Continuing (parent contact)",
+      "L4": "Level 4 — Administration involved",
+      "L5": "Level 5 — Formal parent meeting",
+      "L6": "Level 6 — Director involved"
+    },
+    "incidentLog": "Incident log",
+    "parentContact": "Parent contact"
+  },
+  "fees": {
+    "title": "Fees & Payments",
+    "schedule": "Fee schedule",
+    "payments": "Payments",
+    "balance": "Balance",
+    "status": {
+      "PAID_IN_FULL": "Paid in full",
+      "PARTIAL": "Partial",
+      "UNPAID": "Unpaid",
+      "OVERDUE": "Overdue"
+    },
+    "overdue30": "Overdue 30+ days"
+  },
+  "staff": {
+    "title": "Staff",
+    "performance": {
+      "STANDARD": "Standard",
+      "NEEDS_SUPPORT": "Needs support",
+      "PROBATION": "Probation"
+    },
+    "observations": "Observations",
+    "leave": "Leave",
+    "timeClock": "Time clock"
+  },
+  "timeClock": {
+    "title": "Time Clock",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "hoursWorked": "Hours worked",
+    "onSite": "On site",
+    "notSignedIn": "Not signed in"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "loading": "Loading...",
+    "noData": "No data",
+    "yes": "Yes",
+    "no": "No",
+    "date": "Date",
+    "actions": "Actions"
+  }
+}

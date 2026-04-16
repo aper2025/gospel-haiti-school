@@ -1,0 +1,777 @@
+// Gospel Haiti International School — Management Platform
+// Postgres (Supabase) + Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ════════════════════════════════════════════════════════════════
+// ENUMS
+// ════════════════════════════════════════════════════════════════
+
+enum Role {
+  DIRECTOR
+  ADMIN
+  HOMEROOM_TEACHER
+  SUBJECT_TEACHER
+  ASSISTANT
+  SUPPORT
+}
+
+enum ClassCode {
+  KG2
+  KG3
+  F1  // 1F
+  F2  // 2F
+  F3  // 3F
+  F4  // 4F
+  F5  // 5F
+  F6  // 6F
+  F7  // 7F
+  F8  // 8F
+  F9  // 9F
+  F10 // 10F — imported but excluded from standard workflows
+}
+
+enum Subject {
+  LECTURE
+  MATHEMATIQUES
+  DICTEE_ORTHOGRAPHE
+  CONJUGAISON_GRAMMAIRE
+  SCIENCES
+  BIOLOGIE
+  PHYSIQUE
+  HISTOIRE
+  GEOGRAPHIE
+  SCIENCES_SOCIALES
+  ANGLAIS
+  ESPAGNOL
+  CREOLE
+  MUSIQUE
+}
+
+enum AttendanceCode {
+  P     // Present
+  L_E   // Late Excused
+  L_U   // Late Unexcused
+  A_E   // Absent Excused
+  A_U   // Absent Unexcused
+}
+
+enum BehaviorLevel {
+  L0
+  L1
+  L2
+  L3
+  L4
+  L5
+  L6
+}
+
+enum GroupLevel {
+  G1  // 80%+
+  G2  // 70-79%
+  G3  // 40-69%
+  G4  // <40%
+}
+
+enum LetterGrade {
+  A
+  B
+  C
+  D
+  F
+}
+
+enum EvaluationType {
+  PETITE_EVALUATION
+  GRANDE_EVALUATION
+  DICTEE
+  EXAMEN
+  AUTRE
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  WITHDRAWN
+  GRADUATED
+}
+
+enum Gender {
+  M
+  F
+}
+
+enum YesNo {
+  YES
+  NO
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  TRANSFER
+  MONEY_ORDER
+  OTHER
+}
+
+enum PaymentStatus {
+  PAID_IN_FULL
+  PARTIAL
+  UNPAID
+  OVERDUE
+}
+
+enum PerformanceStatus {
+  STANDARD
+  NEEDS_SUPPORT
+  PROBATION
+}
+
+enum LeaveType {
+  SICK
+  PERSONAL
+  FAMILY_EMERGENCY
+  PROFESSIONAL_DEVELOPMENT
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+enum WaitlistStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum ContactMethod {
+  PHONE
+  MEETING
+  WRITTEN_NOTE
+  OTHER
+}
+
+enum TimeClockStatus {
+  P              // Present (on time)
+  L_E            // Late Excused
+  L_U            // Late Unexcused
+  U              // No sign-in (pending admin review)
+  MISSING_SIGNOUT
+}
+
+enum NotificationKind {
+  STUDENT_ABSENT_3_DAYS
+  STUDENT_ATTENDANCE_BELOW_85
+  STUDENT_RETENTION_WATCH
+  STUDENT_BEHAVIOR_L4_PLUS
+  PAYMENT_OVERDUE_30_DAYS
+  TEACHER_PROBATION_NO_FOLLOWUP
+  STAFF_MISSING_SIGNOUT
+  STAFF_CHRONIC_LATENESS
+}
+
+enum ContractType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  VOLUNTEER
+}
+
+// ════════════════════════════════════════════════════════════════
+// CORE — SCHOOL YEAR, CLASS, AUTH
+// ════════════════════════════════════════════════════════════════
+
+model SchoolYear {
+  id        String   @id @default(cuid())
+  label     String   @unique // "2025-26"
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enrollments           StudentEnrollment[]
+  feeSchedules          FeeSchedule[]
+  feeAccounts           FeeAccount[]
+  weeklyDataSubmissions WeeklyDataSubmission[]
+  staffAssignments      StaffAssignment[]
+}
+
+model Class {
+  id        String    @id @default(cuid())
+  code      ClassCode @unique
+  label     String    // display label: "KG2", "1F", "2F"...
+  tier      String    // "KINDERGARTEN" | "ELEMENTARY" | "SECONDARY" | "LYCEE"
+  orderIdx  Int       // for sorted display
+  excluded  Boolean   @default(false) // true for F10 (Lycée)
+
+  students         Student[]
+  staffAssignments StaffAssignment[]
+  feeSchedules     FeeSchedule[]
+  waitlistEntries  WaitlistEntry[]
+  enrollments      StudentEnrollment[]
+}
+
+// Application-managed user (no Supabase Auth dependency; Supabase Auth can be added later).
+// Links 1:1 to Staff for staff-members. Directors/admins also have Staff rows.
+model AuthUser {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  role          Role
+  staffId       String?  @unique
+  staff         Staff?   @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  lastSignedIn  DateTime?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  notifications Notification[]
+}
+
+// ════════════════════════════════════════════════════════════════
+// STAFF (Module 6)
+// ════════════════════════════════════════════════════════════════
+
+model Staff {
+  id                     String   @id @default(cuid())
+  legacyId               String?  @unique // UUID from old MySQL system
+  firstName              String
+  lastName               String
+  displayName            String?  // computed "Prénom Nom" for display
+  photoUrl               String?
+  gender                 Gender?
+  dateOfBirth            DateTime? @db.Date
+  phone                  String?
+  addressVillage         String?
+  addressNeighborhood    String?
+  addressCommune         String?
+  addressDepartment      String?
+  email                  String?  @unique
+  role                   Role
+  contractType           ContractType?
+  startDate              DateTime? @db.Date
+  emergencyContactName   String?
+  emergencyContactPhone  String?
+  staffPin               String?  @unique // 4-digit for time-clock
+  performanceStatus      PerformanceStatus @default(STANDARD)
+  active                 Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  authUser        AuthUser?
+  assignments     StaffAssignment[]
+  observationsDone     Observation[] @relation("Observer")
+  observationsReceived Observation[] @relation("Observee")
+  leaveRequests        LeaveRequest[] @relation("LeaveOwner")
+  leaveReviewsDone     LeaveRequest[] @relation("LeaveReviewer")
+  timeClockEntries     TimeClockEntry[]
+  staffAttendance      StaffAttendance[]
+  paymentsReceived     Payment[]
+  evaluationsEntered   Evaluation[]
+  attendanceMarked     Attendance[] @relation("MarkedBy")
+  behaviorIncidents    BehaviorIncident[] @relation("IncidentTeacher")
+  parentContacts       ParentContact[]
+  weeklySubmissions    WeeklyDataSubmission[]
+}
+
+// Links a staff member to a class+subject (or class only for homeroom).
+// Used to scope grade entry and meeting membership.
+model StaffAssignment {
+  id          String      @id @default(cuid())
+  staffId     String
+  classId     String
+  subject     Subject?    // null = homeroom all subjects
+  isHomeroom  Boolean     @default(false)
+  yearId      String
+  createdAt   DateTime    @default(now())
+
+  staff       Staff       @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  class       Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
+  year        SchoolYear  @relation(fields: [yearId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, classId, subject, yearId])
+  @@index([classId, yearId])
+  @@index([staffId, yearId])
+}
+
+// ════════════════════════════════════════════════════════════════
+// STUDENTS (Module 1) + WAITLIST
+// ════════════════════════════════════════════════════════════════
+
+model Student {
+  id                    String   @id @default(cuid())
+  legacyId              String?  @unique // UUID from old MySQL system
+  firstName             String
+  lastName              String
+  photoUrl              String?
+  schoolEmail           String?  @unique
+  gender                Gender?
+  dateOfBirth           DateTime? @db.Date
+  addressVillage        String?
+  addressNeighborhood   String?
+  addressCommune        String?
+  addressDepartment     String?
+  currentClassId        String?
+  currentClass          Class?   @relation(fields: [currentClassId], references: [id], onDelete: SetNull)
+  enrollmentDate        DateTime? @db.Date
+  enrollmentStatus      EnrollmentStatus @default(ACTIVE)
+  motherFirstName       String?
+  motherLastName        String?
+  motherAlive           YesNo?
+  motherPhone           String?
+  fatherFirstName       String?
+  fatherLastName        String?
+  fatherAlive           YesNo?
+  fatherPhone           String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  medicalNotes          String?
+  birthCertOnFile       Boolean  @default(false)
+  hasSiblingsAtSchool   Boolean  @default(false)
+  generalNotes          String?
+  currentBehaviorLevel  BehaviorLevel @default(L0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  siblingsOf        SiblingLink[] @relation("StudentA")
+  siblingOf         SiblingLink[] @relation("StudentB")
+  enrollments       StudentEnrollment[]
+  attendance        Attendance[]
+  evaluations       Evaluation[]
+  weeklyPlacements  WeeklyGroupPlacement[]
+  tutoring          TutoringAssignment[]
+  retentionWatches  RetentionWatch[]
+  behaviorIncidents BehaviorIncident[]
+  behaviorChanges   BehaviorLevelChange[]
+  feeAccounts       FeeAccount[]
+  retentionRecords  GradeRetention[]
+}
+
+// Bidirectional siblings link without duplicate rows
+model SiblingLink {
+  id         String   @id @default(cuid())
+  studentAId String
+  studentBId String
+  studentA   Student  @relation("StudentA", fields: [studentAId], references: [id], onDelete: Cascade)
+  studentB   Student  @relation("StudentB", fields: [studentBId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([studentAId, studentBId])
+}
+
+// Academic year history per student (what class each year, retention flag)
+model StudentEnrollment {
+  id         String   @id @default(cuid())
+  studentId  String
+  yearId     String
+  classId    String
+  retained   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  student Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  year    SchoolYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  class   Class      @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, yearId])
+  @@index([yearId, classId])
+}
+
+model GradeRetention {
+  id         String   @id @default(cuid())
+  studentId  String
+  yearLabel  String   // "2024-25"
+  classCode  ClassCode
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+// Enrollment waitlist (Module 1, spec addition)
+model WaitlistEntry {
+  id              String         @id @default(cuid())
+  childFirstName  String
+  childLastName   String
+  parentName      String
+  parentPhone     String
+  requestedClassId String?
+  requestedClass   Class?        @relation(fields: [requestedClassId], references: [id], onDelete: SetNull)
+  academicYear    String         // "2026-27" etc.
+  status          WaitlistStatus @default(PENDING)
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  visits WaitlistVisit[]
+}
+
+model WaitlistVisit {
+  id         String   @id @default(cuid())
+  entryId    String
+  visitDate  DateTime @db.Date
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  entry WaitlistEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([entryId, visitDate])
+}
+
+// ════════════════════════════════════════════════════════════════
+// ATTENDANCE (Module 2)
+// ════════════════════════════════════════════════════════════════
+
+model Attendance {
+  id         String         @id @default(cuid())
+  studentId  String
+  date       DateTime       @db.Date
+  code       AttendanceCode
+  notes      String?
+  markedById String
+  markedAt   DateTime       @default(now())
+  // offline sync support
+  clientUuid String?        @unique // IndexedDB record id for idempotent sync
+  syncedAt   DateTime?
+
+  student  Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  markedBy Staff   @relation("MarkedBy", fields: [markedById], references: [id])
+
+  @@unique([studentId, date])
+  @@index([date])
+}
+
+// ════════════════════════════════════════════════════════════════
+// ACADEMIC / GRADEBOOK (Module 3)
+// ════════════════════════════════════════════════════════════════
+
+model Evaluation {
+  id          String         @id @default(cuid())
+  studentId   String
+  subject     Subject
+  type        EvaluationType
+  scorePct    Float          // 0.0–100.0
+  letter      LetterGrade
+  group       GroupLevel
+  date        DateTime       @db.Date
+  weekStart   DateTime       @db.Date // Monday of the week (for weekly placement computation)
+  notes       String?
+  enteredById String
+  enteredAt   DateTime       @default(now())
+  clientUuid  String?        @unique // offline sync
+  syncedAt    DateTime?
+
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  enteredBy Staff   @relation(fields: [enteredById], references: [id])
+
+  @@index([studentId, subject, weekStart])
+  @@index([date])
+}
+
+// Weekly placement = average of evaluations in that week, per student+subject
+model WeeklyGroupPlacement {
+  id         String     @id @default(cuid())
+  studentId  String
+  subject    Subject
+  weekStart  DateTime   @db.Date // Monday
+  avgScore   Float
+  group      GroupLevel
+  sampleSize Int        // number of evaluations used
+  createdAt  DateTime   @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, subject, weekStart])
+  @@index([weekStart, group])
+}
+
+// When a student is Group 4 for 4+ consecutive weeks → flagged for retention watch
+model RetentionWatch {
+  id             String    @id @default(cuid())
+  studentId      String
+  subject        Subject
+  startWeek      DateTime  @db.Date // first of the 4+ Group 4 weeks
+  consecutiveWks Int
+  rootCause      String?
+  actionPlan     String?
+  resolvedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, resolvedAt])
+}
+
+// After-school tutoring assignment (Mon/Tue for Group 4)
+model TutoringAssignment {
+  id         String    @id @default(cuid())
+  studentId  String
+  subject    Subject
+  teacherId  String?
+  dayMonday  Boolean   @default(false)
+  dayTuesday Boolean   @default(false)
+  startDate  DateTime  @db.Date
+  endDate    DateTime? @db.Date
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, startDate])
+}
+
+// ════════════════════════════════════════════════════════════════
+// BEHAVIOR (Module 4)
+// ════════════════════════════════════════════════════════════════
+
+model BehaviorIncident {
+  id          String        @id @default(cuid())
+  studentId   String
+  date        DateTime      @db.Date
+  description String
+  level       BehaviorLevel
+  teacherId   String
+  resolution  String?
+  outcome     String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  student        Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacher        Staff            @relation("IncidentTeacher", fields: [teacherId], references: [id])
+  parentContacts ParentContact[]
+
+  @@index([studentId, date])
+  @@index([level, date])
+}
+
+model BehaviorLevelChange {
+  id          String        @id @default(cuid())
+  studentId   String
+  fromLevel   BehaviorLevel
+  toLevel     BehaviorLevel
+  changedById String?
+  reason      String?
+  changedAt   DateTime      @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, changedAt])
+}
+
+model ParentContact {
+  id          String        @id @default(cuid())
+  incidentId  String?
+  studentId   String?       // direct contact (not tied to incident)
+  date        DateTime      @db.Date
+  method      ContactMethod
+  contactedById String
+  outcome     String?
+  nextSteps   String?
+  createdAt   DateTime      @default(now())
+
+  incident    BehaviorIncident? @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  contactedBy Staff             @relation(fields: [contactedById], references: [id])
+
+  @@index([incidentId])
+  @@index([studentId, date])
+}
+
+// ════════════════════════════════════════════════════════════════
+// FEES & PAYMENTS (Module 5)
+// ════════════════════════════════════════════════════════════════
+
+model FeeSchedule {
+  id        String   @id @default(cuid())
+  yearId    String
+  classId   String
+  amountHtg Decimal  @db.Decimal(12, 2) // Haitian Gourdes
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  year  SchoolYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  class Class      @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([yearId, classId])
+}
+
+model FeeAccount {
+  id          String        @id @default(cuid())
+  studentId   String
+  yearId      String
+  totalOwed   Decimal       @db.Decimal(12, 2)
+  totalPaid   Decimal       @db.Decimal(12, 2) @default(0)
+  status      PaymentStatus @default(UNPAID)
+  lastPayment DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  student  Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  year     SchoolYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@unique([studentId, yearId])
+  @@index([status])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  accountId   String
+  date        DateTime      @db.Date
+  amountHtg   Decimal       @db.Decimal(12, 2)
+  method      PaymentMethod
+  receivedById String
+  notes       String?
+  createdAt   DateTime      @default(now())
+
+  account    FeeAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  receivedBy Staff      @relation(fields: [receivedById], references: [id])
+
+  @@index([accountId, date])
+}
+
+// ════════════════════════════════════════════════════════════════
+// STAFF OBSERVATIONS & LEAVE (Module 6)
+// ════════════════════════════════════════════════════════════════
+
+model Observation {
+  id              String    @id @default(cuid())
+  staffId         String    // observee
+  observerId      String
+  date            DateTime  @db.Date
+  score           Int?      // optional numeric score
+  strengths       String?
+  improvements    String?
+  actionPlan      String?
+  followUpDate    DateTime? @db.Date
+  outcome         String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  staff    Staff @relation("Observee", fields: [staffId], references: [id], onDelete: Cascade)
+  observer Staff @relation("Observer", fields: [observerId], references: [id])
+
+  @@index([staffId, date])
+  @@index([followUpDate])
+}
+
+model LeaveRequest {
+  id         String      @id @default(cuid())
+  staffId    String
+  type       LeaveType
+  startDate  DateTime    @db.Date
+  endDate    DateTime    @db.Date
+  reason     String?
+  status     LeaveStatus @default(PENDING)
+  reviewedById String?
+  reviewedAt DateTime?
+  reviewerNotes String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  staff      Staff  @relation("LeaveOwner", fields: [staffId], references: [id], onDelete: Cascade)
+  reviewedBy Staff? @relation("LeaveReviewer", fields: [reviewedById], references: [id])
+
+  @@index([staffId, startDate])
+  @@index([status])
+}
+
+// ════════════════════════════════════════════════════════════════
+// STAFF TIME CLOCK (Module 7)
+// ════════════════════════════════════════════════════════════════
+
+model TimeClockEntry {
+  id           String    @id @default(cuid())
+  staffId      String
+  date         DateTime  @db.Date
+  signInAt     DateTime?
+  signOutAt    DateTime?
+  hoursWorked  Decimal?  @db.Decimal(5, 2)
+  recordedById String?   // null = self; else admin id
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, date])
+  @@index([date])
+}
+
+// Auto-generated daily status from TimeClockEntry (batch-computed or trigger)
+model StaffAttendance {
+  id          String          @id @default(cuid())
+  staffId     String
+  date        DateTime        @db.Date
+  status      TimeClockStatus
+  adminReview Boolean         @default(false)
+  reason      String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, date])
+}
+
+// ════════════════════════════════════════════════════════════════
+// WEEKLY MEETING PREP (Module 3 + Analytics)
+// ════════════════════════════════════════════════════════════════
+
+model WeeklyDataSubmission {
+  id                 String   @id @default(cuid())
+  teacherId          String
+  classCode          ClassCode
+  yearId             String
+  weekStart          DateTime @db.Date
+  totalStudents      Int
+  group1Count        Int
+  group2Count        Int
+  group3Count        Int
+  group4Count        Int
+  group3And4Names    String?  // free-text list; names kept as-is
+  problematicSubjects String? // comma-separated or free text
+  tutoringAssigned   String?
+  rootCauseAnalysis  String?
+  actionPlan         String?
+  behaviorIssues     String?
+  notes              String?
+  submittedAt        DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  teacher Staff      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  year    SchoolYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, classCode, weekStart])
+  @@index([weekStart, classCode])
+}
+
+// ════════════════════════════════════════════════════════════════
+// NOTIFICATIONS / ALERTS
+// ════════════════════════════════════════════════════════════════
+
+model Notification {
+  id          String           @id @default(cuid())
+  recipientId String
+  kind        NotificationKind
+  title       String
+  body        String?
+  payload     Json?            // structured context (studentId, staffId, etc.)
+  readAt      DateTime?
+  createdAt   DateTime         @default(now())
+
+  recipient AuthUser @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, readAt])
+  @@index([kind, createdAt])
+}
