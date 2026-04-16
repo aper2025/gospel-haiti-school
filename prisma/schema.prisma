@@ -27,15 +27,15 @@ enum Role {
 enum ClassCode {
   KG2
   KG3
-  F1  // 1F
-  F2  // 2F
-  F3  // 3F
-  F4  // 4F
-  F5  // 5F
-  F6  // 6F
-  F7  // 7F
-  F8  // 8F
-  F9  // 9F
+  F1 // 1F
+  F2 // 2F
+  F3 // 3F
+  F4 // 4F
+  F5 // 5F
+  F6 // 6F
+  F7 // 7F
+  F8 // 8F
+  F9 // 9F
   F10 // 10F — imported but excluded from standard workflows
 }
 
@@ -57,11 +57,11 @@ enum Subject {
 }
 
 enum AttendanceCode {
-  P     // Present
-  L_E   // Late Excused
-  L_U   // Late Unexcused
-  A_E   // Absent Excused
-  A_U   // Absent Unexcused
+  P // Present
+  L_E // Late Excused
+  L_U // Late Unexcused
+  A_E // Absent Excused
+  A_U // Absent Unexcused
 }
 
 enum BehaviorLevel {
@@ -75,10 +75,10 @@ enum BehaviorLevel {
 }
 
 enum GroupLevel {
-  G1  // 80%+
-  G2  // 70-79%
-  G3  // 40-69%
-  G4  // <40%
+  G1 // 80%+
+  G2 // 70-79%
+  G3 // 40-69%
+  G4 // <40%
 }
 
 enum LetterGrade {
@@ -161,10 +161,10 @@ enum ContactMethod {
 }
 
 enum TimeClockStatus {
-  P              // Present (on time)
-  L_E            // Late Excused
-  L_U            // Late Unexcused
-  U              // No sign-in (pending admin review)
+  P // Present (on time)
+  L_E // Late Excused
+  L_U // Late Unexcused
+  U // No sign-in (pending admin review)
   MISSING_SIGNOUT
 }
 
@@ -177,6 +177,7 @@ enum NotificationKind {
   TEACHER_PROBATION_NO_FOLLOWUP
   STAFF_MISSING_SIGNOUT
   STAFF_CHRONIC_LATENESS
+  TIMETABLE_CONFLICT
 }
 
 enum ContractType {
@@ -184,6 +185,30 @@ enum ContractType {
   PART_TIME
   CONTRACT
   VOLUNTEER
+}
+
+enum TrimestreNumber {
+  T1
+  T2
+  T3
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+}
+
+enum CalendarEventType {
+  TRIMESTRE_START
+  TRIMESTRE_END
+  HOLIDAY
+  EXAM_WEEK
+  NO_SCHOOL
+  STAFF_MEETING
+  SPECIAL_EVENT
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -204,37 +229,43 @@ model SchoolYear {
   feeAccounts           FeeAccount[]
   weeklyDataSubmissions WeeklyDataSubmission[]
   staffAssignments      StaffAssignment[]
+  trimestres            Trimestre[]
+  timetableEntries      TimetableEntry[]
+  calendarEvents        SchoolCalendarEvent[]
 }
 
 model Class {
-  id        String    @id @default(cuid())
-  code      ClassCode @unique
-  label     String    // display label: "KG2", "1F", "2F"...
-  tier      String    // "KINDERGARTEN" | "ELEMENTARY" | "SECONDARY" | "LYCEE"
-  orderIdx  Int       // for sorted display
-  excluded  Boolean   @default(false) // true for F10 (Lycée)
+  id       String    @id @default(cuid())
+  code     ClassCode @unique
+  label    String // display label: "KG2", "1F", "2F"...
+  tier     String // "KINDERGARTEN" | "ELEMENTARY" | "SECONDARY" | "LYCEE"
+  orderIdx Int // for sorted display
+  excluded Boolean   @default(false) // true for F10 (Lycée)
 
   students         Student[]
   staffAssignments StaffAssignment[]
   feeSchedules     FeeSchedule[]
   waitlistEntries  WaitlistEntry[]
   enrollments      StudentEnrollment[]
+  timetableEntries TimetableEntry[]
 }
 
-// Application-managed user (no Supabase Auth dependency; Supabase Auth can be added later).
-// Links 1:1 to Staff for staff-members. Directors/admins also have Staff rows.
-model AuthUser {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  passwordHash  String
-  role          Role
-  staffId       String?  @unique
-  staff         Staff?   @relation(fields: [staffId], references: [id], onDelete: SetNull)
-  lastSignedIn  DateTime?
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  notifications Notification[]
+// Links to Supabase Auth (auth.users). Supabase handles email/password;
+// this table stores app-specific profile data (role, staff link).
+model UserProfile {
+  id           String    @id @default(cuid())
+  authUid      String    @unique // Supabase Auth user UUID (auth.users.id)
+  email        String    @unique
+  role         Role
+  staffId      String?   @unique
+  staff        Staff?    @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  lastSignedIn DateTime?
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  notifications        Notification[]
+  transcriptsGenerated Transcript[]
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -242,61 +273,62 @@ model AuthUser {
 // ════════════════════════════════════════════════════════════════
 
 model Staff {
-  id                     String   @id @default(cuid())
-  legacyId               String?  @unique // UUID from old MySQL system
-  firstName              String
-  lastName               String
-  displayName            String?  // computed "Prénom Nom" for display
-  photoUrl               String?
-  gender                 Gender?
-  dateOfBirth            DateTime? @db.Date
-  phone                  String?
-  addressVillage         String?
-  addressNeighborhood    String?
-  addressCommune         String?
-  addressDepartment      String?
-  email                  String?  @unique
-  role                   Role
-  contractType           ContractType?
-  startDate              DateTime? @db.Date
-  emergencyContactName   String?
-  emergencyContactPhone  String?
-  staffPin               String?  @unique // 4-digit for time-clock
-  performanceStatus      PerformanceStatus @default(STANDARD)
-  active                 Boolean  @default(true)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id                    String            @id @default(cuid())
+  legacyId              String?           @unique // UUID from old MySQL system
+  firstName             String
+  lastName              String
+  displayName           String? // computed "Prénom Nom" for display
+  photoUrl              String?
+  gender                Gender?
+  dateOfBirth           DateTime?         @db.Date
+  phone                 String?
+  addressVillage        String?
+  addressNeighborhood   String?
+  addressCommune        String?
+  addressDepartment     String?
+  email                 String?           @unique
+  role                  Role
+  contractType          ContractType?
+  startDate             DateTime?         @db.Date
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  staffPin              String?           @unique // 4-digit for time-clock
+  performanceStatus     PerformanceStatus @default(STANDARD)
+  active                Boolean           @default(true)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
 
-  authUser        AuthUser?
-  assignments     StaffAssignment[]
-  observationsDone     Observation[] @relation("Observer")
-  observationsReceived Observation[] @relation("Observee")
-  leaveRequests        LeaveRequest[] @relation("LeaveOwner")
-  leaveReviewsDone     LeaveRequest[] @relation("LeaveReviewer")
+  userProfile          UserProfile?
+  assignments          StaffAssignment[]
+  observationsDone     Observation[]          @relation("Observer")
+  observationsReceived Observation[]          @relation("Observee")
+  leaveRequests        LeaveRequest[]         @relation("LeaveOwner")
+  leaveReviewsDone     LeaveRequest[]         @relation("LeaveReviewer")
   timeClockEntries     TimeClockEntry[]
   staffAttendance      StaffAttendance[]
   paymentsReceived     Payment[]
   evaluationsEntered   Evaluation[]
-  attendanceMarked     Attendance[] @relation("MarkedBy")
-  behaviorIncidents    BehaviorIncident[] @relation("IncidentTeacher")
+  attendanceMarked     Attendance[]           @relation("MarkedBy")
+  behaviorIncidents    BehaviorIncident[]     @relation("IncidentTeacher")
   parentContacts       ParentContact[]
   weeklySubmissions    WeeklyDataSubmission[]
+  timetableEntries     TimetableEntry[]
 }
 
 // Links a staff member to a class+subject (or class only for homeroom).
 // Used to scope grade entry and meeting membership.
 model StaffAssignment {
-  id          String      @id @default(cuid())
-  staffId     String
-  classId     String
-  subject     Subject?    // null = homeroom all subjects
-  isHomeroom  Boolean     @default(false)
-  yearId      String
-  createdAt   DateTime    @default(now())
+  id         String   @id @default(cuid())
+  staffId    String
+  classId    String
+  subject    Subject? // null = homeroom all subjects
+  isHomeroom Boolean  @default(false)
+  yearId     String
+  createdAt  DateTime @default(now())
 
-  staff       Staff       @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  class       Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
-  year        SchoolYear  @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  staff Staff      @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  class Class      @relation(fields: [classId], references: [id], onDelete: Cascade)
+  year  SchoolYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
 
   @@unique([staffId, classId, subject, yearId])
   @@index([classId, yearId])
@@ -308,21 +340,21 @@ model StaffAssignment {
 // ════════════════════════════════════════════════════════════════
 
 model Student {
-  id                    String   @id @default(cuid())
-  legacyId              String?  @unique // UUID from old MySQL system
+  id                    String           @id @default(cuid())
+  legacyId              String?          @unique // UUID from old MySQL system
   firstName             String
   lastName              String
   photoUrl              String?
-  schoolEmail           String?  @unique
+  schoolEmail           String?          @unique
   gender                Gender?
-  dateOfBirth           DateTime? @db.Date
+  dateOfBirth           DateTime?        @db.Date
   addressVillage        String?
   addressNeighborhood   String?
   addressCommune        String?
   addressDepartment     String?
   currentClassId        String?
-  currentClass          Class?   @relation(fields: [currentClassId], references: [id], onDelete: SetNull)
-  enrollmentDate        DateTime? @db.Date
+  currentClass          Class?           @relation(fields: [currentClassId], references: [id], onDelete: SetNull)
+  enrollmentDate        DateTime?        @db.Date
   enrollmentStatus      EnrollmentStatus @default(ACTIVE)
   motherFirstName       String?
   motherLastName        String?
@@ -335,15 +367,15 @@ model Student {
   emergencyContactName  String?
   emergencyContactPhone String?
   medicalNotes          String?
-  birthCertOnFile       Boolean  @default(false)
-  hasSiblingsAtSchool   Boolean  @default(false)
+  birthCertOnFile       Boolean          @default(false)
+  hasSiblingsAtSchool   Boolean          @default(false)
   generalNotes          String?
-  currentBehaviorLevel  BehaviorLevel @default(L0)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  currentBehaviorLevel  BehaviorLevel    @default(L0)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
-  siblingsOf        SiblingLink[] @relation("StudentA")
-  siblingOf         SiblingLink[] @relation("StudentB")
+  siblingsOf        SiblingLink[]          @relation("StudentA")
+  siblingOf         SiblingLink[]          @relation("StudentB")
   enrollments       StudentEnrollment[]
   attendance        Attendance[]
   evaluations       Evaluation[]
@@ -354,6 +386,8 @@ model Student {
   behaviorChanges   BehaviorLevelChange[]
   feeAccounts       FeeAccount[]
   retentionRecords  GradeRetention[]
+  reportCards       ReportCard[]
+  transcripts       Transcript[]
 }
 
 // Bidirectional siblings link without duplicate rows
@@ -370,12 +404,12 @@ model SiblingLink {
 
 // Academic year history per student (what class each year, retention flag)
 model StudentEnrollment {
-  id         String   @id @default(cuid())
-  studentId  String
-  yearId     String
-  classId    String
-  retained   Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  studentId String
+  yearId    String
+  classId   String
+  retained  Boolean  @default(false)
+  createdAt DateTime @default(now())
 
   student Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
   year    SchoolYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
@@ -386,40 +420,40 @@ model StudentEnrollment {
 }
 
 model GradeRetention {
-  id         String   @id @default(cuid())
-  studentId  String
-  yearLabel  String   // "2024-25"
-  classCode  ClassCode
-  reason     String?
-  createdAt  DateTime @default(now())
+  id        String    @id @default(cuid())
+  studentId String
+  yearLabel String // "2024-25"
+  classCode ClassCode
+  reason    String?
+  createdAt DateTime  @default(now())
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }
 
 // Enrollment waitlist (Module 1, spec addition)
 model WaitlistEntry {
-  id              String         @id @default(cuid())
-  childFirstName  String
-  childLastName   String
-  parentName      String
-  parentPhone     String
+  id               String         @id @default(cuid())
+  childFirstName   String
+  childLastName    String
+  parentName       String
+  parentPhone      String
   requestedClassId String?
-  requestedClass   Class?        @relation(fields: [requestedClassId], references: [id], onDelete: SetNull)
-  academicYear    String         // "2026-27" etc.
-  status          WaitlistStatus @default(PENDING)
-  notes           String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  requestedClass   Class?         @relation(fields: [requestedClassId], references: [id], onDelete: SetNull)
+  academicYear     String // "2026-27" etc.
+  status           WaitlistStatus @default(PENDING)
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   visits WaitlistVisit[]
 }
 
 model WaitlistVisit {
-  id         String   @id @default(cuid())
-  entryId    String
-  visitDate  DateTime @db.Date
-  notes      String?
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  entryId   String
+  visitDate DateTime @db.Date
+  notes     String?
+  createdAt DateTime @default(now())
 
   entry WaitlistEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
@@ -458,7 +492,7 @@ model Evaluation {
   studentId   String
   subject     Subject
   type        EvaluationType
-  scorePct    Float          // 0.0–100.0
+  scorePct    Float // 0.0–100.0
   letter      LetterGrade
   group       GroupLevel
   date        DateTime       @db.Date
@@ -484,7 +518,7 @@ model WeeklyGroupPlacement {
   weekStart  DateTime   @db.Date // Monday
   avgScore   Float
   group      GroupLevel
-  sampleSize Int        // number of evaluations used
+  sampleSize Int // number of evaluations used
   createdAt  DateTime   @default(now())
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -546,8 +580,8 @@ model BehaviorIncident {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  student        Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  teacher        Staff            @relation("IncidentTeacher", fields: [teacherId], references: [id])
+  student        Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacher        Staff           @relation("IncidentTeacher", fields: [teacherId], references: [id])
   parentContacts ParentContact[]
 
   @@index([studentId, date])
@@ -569,15 +603,15 @@ model BehaviorLevelChange {
 }
 
 model ParentContact {
-  id          String        @id @default(cuid())
-  incidentId  String?
-  studentId   String?       // direct contact (not tied to incident)
-  date        DateTime      @db.Date
-  method      ContactMethod
+  id            String        @id @default(cuid())
+  incidentId    String?
+  studentId     String? // direct contact (not tied to incident)
+  date          DateTime      @db.Date
+  method        ContactMethod
   contactedById String
-  outcome     String?
-  nextSteps   String?
-  createdAt   DateTime      @default(now())
+  outcome       String?
+  nextSteps     String?
+  createdAt     DateTime      @default(now())
 
   incident    BehaviorIncident? @relation(fields: [incidentId], references: [id], onDelete: SetNull)
   contactedBy Staff             @relation(fields: [contactedById], references: [id])
@@ -610,7 +644,7 @@ model FeeAccount {
   studentId   String
   yearId      String
   totalOwed   Decimal       @db.Decimal(12, 2)
-  totalPaid   Decimal       @db.Decimal(12, 2) @default(0)
+  totalPaid   Decimal       @default(0) @db.Decimal(12, 2)
   status      PaymentStatus @default(UNPAID)
   lastPayment DateTime?
   createdAt   DateTime      @default(now())
@@ -625,14 +659,14 @@ model FeeAccount {
 }
 
 model Payment {
-  id          String        @id @default(cuid())
-  accountId   String
-  date        DateTime      @db.Date
-  amountHtg   Decimal       @db.Decimal(12, 2)
-  method      PaymentMethod
+  id           String        @id @default(cuid())
+  accountId    String
+  date         DateTime      @db.Date
+  amountHtg    Decimal       @db.Decimal(12, 2)
+  method       PaymentMethod
   receivedById String
-  notes       String?
-  createdAt   DateTime      @default(now())
+  notes        String?
+  createdAt    DateTime      @default(now())
 
   account    FeeAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   receivedBy Staff      @relation(fields: [receivedById], references: [id])
@@ -645,18 +679,18 @@ model Payment {
 // ════════════════════════════════════════════════════════════════
 
 model Observation {
-  id              String    @id @default(cuid())
-  staffId         String    // observee
-  observerId      String
-  date            DateTime  @db.Date
-  score           Int?      // optional numeric score
-  strengths       String?
-  improvements    String?
-  actionPlan      String?
-  followUpDate    DateTime? @db.Date
-  outcome         String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  staffId      String // observee
+  observerId   String
+  date         DateTime  @db.Date
+  score        Int? // optional numeric score
+  strengths    String?
+  improvements String?
+  actionPlan   String?
+  followUpDate DateTime? @db.Date
+  outcome      String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   staff    Staff @relation("Observee", fields: [staffId], references: [id], onDelete: Cascade)
   observer Staff @relation("Observer", fields: [observerId], references: [id])
@@ -666,18 +700,18 @@ model Observation {
 }
 
 model LeaveRequest {
-  id         String      @id @default(cuid())
-  staffId    String
-  type       LeaveType
-  startDate  DateTime    @db.Date
-  endDate    DateTime    @db.Date
-  reason     String?
-  status     LeaveStatus @default(PENDING)
-  reviewedById String?
-  reviewedAt DateTime?
+  id            String      @id @default(cuid())
+  staffId       String
+  type          LeaveType
+  startDate     DateTime    @db.Date
+  endDate       DateTime    @db.Date
+  reason        String?
+  status        LeaveStatus @default(PENDING)
+  reviewedById  String?
+  reviewedAt    DateTime?
   reviewerNotes String?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   staff      Staff  @relation("LeaveOwner", fields: [staffId], references: [id], onDelete: Cascade)
   reviewedBy Staff? @relation("LeaveReviewer", fields: [reviewedById], references: [id])
@@ -697,7 +731,7 @@ model TimeClockEntry {
   signInAt     DateTime?
   signOutAt    DateTime?
   hoursWorked  Decimal?  @db.Decimal(5, 2)
-  recordedById String?   // null = self; else admin id
+  recordedById String? // null = self; else admin id
   notes        String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -725,29 +759,160 @@ model StaffAttendance {
 }
 
 // ════════════════════════════════════════════════════════════════
+// REPORT CARDS & TRANSCRIPTS (Module 8)
+// ════════════════════════════════════════════════════════════════
+
+// Defines trimestre boundaries within a school year (T1, T2, T3)
+model Trimestre {
+  id        String          @id @default(cuid())
+  yearId    String
+  number    TrimestreNumber
+  startDate DateTime        @db.Date
+  endDate   DateTime        @db.Date
+  createdAt DateTime        @default(now())
+
+  year        SchoolYear   @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  reportCards ReportCard[]
+
+  @@unique([yearId, number])
+}
+
+// One report card per student per trimestre
+model ReportCard {
+  id                String    @id @default(cuid())
+  studentId         String
+  trimestreId       String
+  attendanceSummary Json? // { present: N, lateExcused: N, lateUnexcused: N, absentExcused: N, absentUnexcused: N }
+  behaviorSummary   Json? // { incidentCount: N, currentLevel: "L0" }
+  homeroomComment   String? // general observations from homeroom teacher
+  cumulativeAvg     Float? // year-to-date average (populated from T2 onward)
+  pdfUrl            String? // Supabase Storage URL of generated PDF
+  generatedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  student   Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  trimestre Trimestre         @relation(fields: [trimestreId], references: [id], onDelete: Cascade)
+  entries   ReportCardEntry[]
+
+  @@unique([studentId, trimestreId])
+}
+
+// Per-subject breakdown within a report card
+model ReportCardEntry {
+  id             String      @id @default(cuid())
+  reportCardId   String
+  subject        Subject
+  trimestreAvg   Float // computed average for the trimestre
+  letter         LetterGrade
+  group          GroupLevel
+  teacherComment String? // per-subject teacher comment (bilingual free text)
+  conductMark    String? // optional conduct mark
+  effortMark     String? // optional effort mark
+
+  reportCard ReportCard @relation(fields: [reportCardId], references: [id], onDelete: Cascade)
+
+  @@unique([reportCardId, subject])
+}
+
+// Multi-year transcript (only Director/Admin can generate)
+model Transcript {
+  id              String   @id @default(cuid())
+  studentId       String
+  title           String? // e.g. "End of Year 2025-26" or "Complete Transcript"
+  academicHistory Json // [{ year, class, subjects: [{ name, T1, T2, T3, final }] }]
+  retentionNotes  String?
+  pdfUrl          String? // Supabase Storage URL
+  generatedById   String
+  generatedAt     DateTime @default(now())
+
+  student     Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  generatedBy UserProfile @relation(fields: [generatedById], references: [id])
+
+  @@index([studentId])
+}
+
+// ════════════════════════════════════════════════════════════════
+// SCHEDULES & TIMETABLES (Module 9)
+// ════════════════════════════════════════════════════════════════
+
+// Named time periods within a school day (e.g. "Bloc 1", "Récréation")
+model TimeSlot {
+  id        String    @id @default(cuid())
+  label     String // "Méditation biblique", "Bloc 1", "Récréation", etc.
+  dayOfWeek DayOfWeek
+  startTime String // "07:45" (HH:mm)
+  endTime   String // "08:00" (HH:mm)
+  isBreak   Boolean   @default(false) // recess, lunch, meditation — not assignable to subjects
+  orderIdx  Int // display order within a day
+  createdAt DateTime  @default(now())
+
+  timetableEntries TimetableEntry[]
+
+  @@unique([dayOfWeek, orderIdx])
+  @@index([dayOfWeek])
+}
+
+// Maps a class + subject + teacher to a time slot for a given year
+model TimetableEntry {
+  id         String   @id @default(cuid())
+  classId    String
+  subject    Subject
+  teacherId  String
+  timeSlotId String
+  yearId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  class    Class      @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacher  Staff      @relation(fields: [teacherId], references: [id])
+  timeSlot TimeSlot   @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
+  year     SchoolYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, timeSlotId, yearId])
+  @@index([teacherId, yearId])
+}
+
+// School-wide calendar events (holidays, exam weeks, trimestre boundaries)
+model SchoolCalendarEvent {
+  id          String            @id @default(cuid())
+  yearId      String
+  type        CalendarEventType
+  title       String
+  startDate   DateTime          @db.Date
+  endDate     DateTime?         @db.Date // null = single day event
+  description String?
+  createdAt   DateTime          @default(now())
+
+  year SchoolYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
+
+  @@index([yearId, startDate])
+}
+
+// ════════════════════════════════════════════════════════════════
 // WEEKLY MEETING PREP (Module 3 + Analytics)
 // ════════════════════════════════════════════════════════════════
 
 model WeeklyDataSubmission {
-  id                 String   @id @default(cuid())
-  teacherId          String
-  classCode          ClassCode
-  yearId             String
-  weekStart          DateTime @db.Date
-  totalStudents      Int
-  group1Count        Int
-  group2Count        Int
-  group3Count        Int
-  group4Count        Int
-  group3And4Names    String?  // free-text list; names kept as-is
+  id                  String    @id @default(cuid())
+  teacherId           String
+  classCode           ClassCode
+  yearId              String
+  weekStart           DateTime  @db.Date
+  totalStudents       Int
+  group1Count         Int
+  group2Count         Int
+  group3Count         Int
+  group4Count         Int
+  group3And4Names     String? // free-text list; names kept as-is
   problematicSubjects String? // comma-separated or free text
-  tutoringAssigned   String?
-  rootCauseAnalysis  String?
-  actionPlan         String?
-  behaviorIssues     String?
-  notes              String?
-  submittedAt        DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  tutoringAssigned    String?
+  rootCauseAnalysis   String?
+  actionPlan          String?
+  behaviorIssues      String?
+  notes               String?
+  submittedAt         DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   teacher Staff      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   year    SchoolYear @relation(fields: [yearId], references: [id], onDelete: Cascade)
@@ -766,11 +931,11 @@ model Notification {
   kind        NotificationKind
   title       String
   body        String?
-  payload     Json?            // structured context (studentId, staffId, etc.)
+  payload     Json? // structured context (studentId, staffId, etc.)
   readAt      DateTime?
   createdAt   DateTime         @default(now())
 
-  recipient AuthUser @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  recipient UserProfile @relation(fields: [recipientId], references: [id], onDelete: Cascade)
 
   @@index([recipientId, readAt])
   @@index([kind, createdAt])

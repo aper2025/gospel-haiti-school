@@ -13,6 +13,8 @@
     "fees": "Fees & Payments",
     "staff": "Staff",
     "timeClock": "Time Clock",
+    "schedules": "Schedules",
+    "weeklyReport": "Weekly Report",
     "reports": "Reports",
     "settings": "Settings",
     "signOut": "Sign out"
@@ -25,6 +27,8 @@
     "pin": "PIN",
     "submit": "Sign in",
     "invalidCredentials": "Invalid credentials",
+    "missingFields": "Please fill in all fields",
+    "genericError": "Sign-in error. Please try again.",
     "welcome": "Welcome"
   },
   "roles": {

@@ -13,6 +13,8 @@
     "fees": "Frais et paiements",
     "staff": "Personnel",
     "timeClock": "Pointage",
+    "schedules": "Horaires",
+    "weeklyReport": "Rapport hebdo",
     "reports": "Rapports",
     "settings": "Paramètres",
     "signOut": "Se déconnecter"
@@ -25,6 +27,8 @@
     "pin": "Code PIN",
     "submit": "Se connecter",
     "invalidCredentials": "Identifiants invalides",
+    "missingFields": "Veuillez remplir tous les champs",
+    "genericError": "Erreur de connexion. Veuillez réessayer.",
     "welcome": "Bienvenue"
   },
   "roles": {
