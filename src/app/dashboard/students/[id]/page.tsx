@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole } from "@/lib/auth";
+import { BehaviorLevelEditor } from "./behavior-level-editor";
 
 export default async function StudentDetailPage({
   params,
@@ -22,6 +23,7 @@ export default async function StudentDetailPage({
       retentionRecords: { orderBy: { createdAt: "desc" } },
       siblingsOf: { include: { studentB: { select: { id: true, firstName: true, lastName: true } } } },
       siblingOf: { include: { studentA: { select: { id: true, firstName: true, lastName: true } } } },
+      behaviorChanges: { orderBy: { changedAt: "desc" }, take: 10 },
     },
   });
 
@@ -118,7 +120,28 @@ export default async function StudentDetailPage({
 
         {/* Behavior */}
         <Card title="Comportement">
-          <Row label="Niveau actuel" value={behaviorLabel(student.currentBehaviorLevel)} />
+          <BehaviorLevelEditor
+            studentId={student.id}
+            currentLevel={student.currentBehaviorLevel}
+          />
+          {student.behaviorChanges.length > 0 && (
+            <div className="mt-4 border-t border-slate-100 pt-3">
+              <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Historique</p>
+              {student.behaviorChanges.map((ch) => (
+                <div key={ch.id} className="flex items-center justify-between py-1.5 text-sm border-b border-slate-50 last:border-0">
+                  <div>
+                    <span className="text-slate-500">{ch.fromLevel}</span>
+                    <span className="text-slate-400 mx-1.5">&rarr;</span>
+                    <span className="font-medium text-slate-900">{ch.toLevel}</span>
+                    {ch.reason && <p className="text-xs text-slate-500 mt-0.5">{ch.reason}</p>}
+                  </div>
+                  <span className="text-xs text-slate-400 shrink-0 ml-2">
+                    {ch.changedAt.toLocaleDateString("fr-FR")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* Siblings */}
