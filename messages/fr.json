@@ -51,7 +51,8 @@
     "F7": "7F",
     "F8": "8F",
     "F9": "9F",
-    "F10": "10F"
+    "F10": "10F",
+    "LYCEE": "Lycée"
   },
   "attendance": {
     "title": "Présence",

@@ -37,6 +37,7 @@ enum ClassCode {
   F8 // 8F
   F9 // 9F
   F10 // 10F — imported but excluded from standard workflows
+  LYCEE // Lycée (High School) — all high school students
 }
 
 enum Subject {
@@ -939,4 +940,20 @@ model Notification {
 
   @@index([recipientId, readAt])
   @@index([kind, createdAt])
+}
+
+// ════════════════════════════════════════════════════════════════
+// SUGGESTIONS / FEEDBACK
+// ════════════════════════════════════════════════════════════════
+
+model Suggestion {
+  id          String    @id @default(cuid())
+  authorEmail String?
+  authorName  String?
+  category    String?   // "bug", "feature", "ui", "other"
+  body        String
+  status      String    @default("pending") // pending, approved, done, dismissed
+  adminNotes  String?
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
 }

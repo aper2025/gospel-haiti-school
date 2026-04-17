@@ -37,6 +37,12 @@ export default async function Home() {
           >
             Pointage personnel
           </Link>
+          <Link
+            href="/take-attendance"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 hover:shadow transition-all duration-200"
+          >
+            Prise de présence
+          </Link>
         </div>
 
         <p className="mt-12 text-xs text-slate-400">

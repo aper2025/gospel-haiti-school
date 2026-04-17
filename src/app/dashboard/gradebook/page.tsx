@@ -3,10 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { GradebookView } from "./gradebook-view";
 
+// Lower grades (KG2-4F): single homeroom teacher, all subjects
+const LOWER_CODES = new Set(["KG2", "KG3", "F1", "F2", "F3", "F4"]);
+
 export default async function GradebookPage({
   searchParams,
 }: {
-  searchParams: Promise<{ class?: string; subject?: string; week?: string }>;
+  searchParams: Promise<{ class?: string; subject?: string }>;
 }) {
   const user = await requireAuth();
   const t = await getTranslations();
@@ -15,10 +18,12 @@ export default async function GradebookPage({
   const classes = await prisma.class.findMany({
     where: { excluded: false },
     orderBy: { orderIdx: "asc" },
-    select: { id: true, label: true },
+    select: { id: true, label: true, code: true },
   });
 
   const selectedClassId = params.class || classes[0]?.id || null;
+  const selectedClass = classes.find((c) => c.id === selectedClassId);
+  const isLowerGrade = selectedClass ? LOWER_CODES.has(selectedClass.code) : false;
   const selectedSubject = params.subject || "";
 
   // Get students for selected class
@@ -31,7 +36,10 @@ export default async function GradebookPage({
     });
   }
 
-  // Get recent evaluations for this class+subject
+  const studentIds = students.map((s) => s.id);
+
+  // For lower grades: fetch ALL evaluations (all subjects)
+  // For upper grades: fetch only if subject selected
   let evaluations: {
     id: string;
     studentId: string;
@@ -44,29 +52,26 @@ export default async function GradebookPage({
     notes: string | null;
   }[] = [];
 
-  if (selectedClassId && selectedSubject) {
+  const shouldFetchEvals = isLowerGrade
+    ? selectedClassId && studentIds.length > 0
+    : selectedClassId && selectedSubject && studentIds.length > 0;
+
+  if (shouldFetchEvals) {
     evaluations = await prisma.evaluation.findMany({
       where: {
-        studentId: { in: students.map((s) => s.id) },
-        subject: selectedSubject as never,
+        studentId: { in: studentIds },
+        ...(isLowerGrade ? {} : { subject: selectedSubject as never }),
       },
       orderBy: { date: "desc" },
-      take: 200,
+      take: 500,
       select: {
-        id: true,
-        studentId: true,
-        subject: true,
-        type: true,
-        scorePct: true,
-        letter: true,
-        group: true,
-        date: true,
-        notes: true,
+        id: true, studentId: true, subject: true, type: true,
+        scorePct: true, letter: true, group: true, date: true, notes: true,
       },
     });
   }
 
-  // Weekly group placements for current week
+  // Weekly placements
   const now = new Date();
   const day = now.getUTCDay();
   const diff = day === 0 ? 6 : day - 1;
@@ -81,23 +86,21 @@ export default async function GradebookPage({
     group: string;
   }[] = [];
 
-  if (selectedClassId && selectedSubject) {
+  const shouldFetchPlacements = isLowerGrade
+    ? selectedClassId && studentIds.length > 0
+    : selectedClassId && selectedSubject && studentIds.length > 0;
+
+  if (shouldFetchPlacements) {
     placements = await prisma.weeklyGroupPlacement.findMany({
       where: {
-        studentId: { in: students.map((s) => s.id) },
-        subject: selectedSubject as never,
+        studentId: { in: studentIds },
         weekStart: new Date(weekStart),
+        ...(isLowerGrade ? {} : { subject: selectedSubject as never }),
       },
-      select: {
-        studentId: true,
-        subject: true,
-        avgScore: true,
-        group: true,
-      },
+      select: { studentId: true, subject: true, avgScore: true, group: true },
     });
   }
 
-  // Subject list from translations
   const subjects = [
     "LECTURE", "MATHEMATIQUES", "DICTEE_ORTHOGRAPHE", "CONJUGAISON_GRAMMAIRE",
     "SCIENCES", "BIOLOGIE", "PHYSIQUE", "HISTOIRE", "GEOGRAPHIE",
@@ -116,7 +119,7 @@ export default async function GradebookPage({
       </h1>
 
       <GradebookView
-        classes={classes}
+        classes={classes.map((c) => ({ id: c.id, label: c.label }))}
         subjects={subjects}
         subjectLabels={subjectLabels}
         students={students}
@@ -127,6 +130,7 @@ export default async function GradebookPage({
         placements={placements}
         selectedClassId={selectedClassId}
         selectedSubject={selectedSubject}
+        isLowerGrade={isLowerGrade}
         translations={{
           score: t("gradebook.score"),
           letterGrade: t("gradebook.letterGrade"),

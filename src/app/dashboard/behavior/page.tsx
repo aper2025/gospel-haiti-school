@@ -81,27 +81,67 @@ export default async function BehaviorPage({
         translations={{ search: t("common.search") }}
       />
 
-      {/* Level summary cards */}
+      {/* Level summary cards — clickable to filter */}
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         {["L0", "L1", "L2", "L3", "L4", "L5", "L6"].map((lvl) => {
           const count = students.filter(
             (s) => s.currentBehaviorLevel === lvl,
           ).length;
+          const isSelected = params.level === lvl;
+          const colors: Record<string, string> = {
+            L0: "border-emerald-200 bg-emerald-50 hover:bg-emerald-100",
+            L1: "border-blue-200 bg-blue-50 hover:bg-blue-100",
+            L2: "border-amber-200 bg-amber-50 hover:bg-amber-100",
+            L3: "border-orange-200 bg-orange-50 hover:bg-orange-100",
+            L4: "border-red-200 bg-red-50 hover:bg-red-100",
+            L5: "border-red-300 bg-red-100 hover:bg-red-200",
+            L6: "border-red-400 bg-red-200 hover:bg-red-300",
+          };
           return (
-            <div
+            <Link
               key={lvl}
-              className={`rounded-lg border p-3 text-center ${
-                lvl >= "L4"
-                  ? "border-red-200 bg-red-50"
-                  : "border-slate-200 bg-white"
+              href={isSelected ? "/dashboard/behavior" : `/dashboard/behavior?level=${lvl}`}
+              className={`card-hover rounded-xl border p-3 text-center transition-all ${colors[lvl]} ${
+                isSelected ? "ring-2 ring-blue-500 ring-offset-1" : ""
               }`}
             >
-              <p className="text-lg font-bold text-slate-900">{count}</p>
-              <p className="text-xs text-slate-500">{lvl}</p>
-            </div>
+              <p className="text-xl font-bold text-slate-900">{count}</p>
+              <p className="text-xs font-medium text-slate-600">{lvl}</p>
+            </Link>
           );
         })}
       </div>
+
+      {/* Students at selected level */}
+      {params.level && (() => {
+        const filtered = students.filter((s) => s.currentBehaviorLevel === params.level);
+        if (!filtered.length) return null;
+        return (
+          <div className="mt-6">
+            <h2 className="text-sm font-semibold text-slate-700 mb-2">
+              Élèves au {params.level} ({filtered.length})
+            </h2>
+            <div className="rounded-xl border border-slate-200 bg-white divide-y divide-slate-100">
+              {filtered.map((s) => (
+                <div key={s.id} className="flex items-center justify-between px-4 py-3">
+                  <div>
+                    <Link
+                      href={`/dashboard/students/${s.id}`}
+                      className="text-sm font-medium text-slate-900 hover:text-blue-700"
+                    >
+                      {s.lastName}, {s.firstName}
+                    </Link>
+                    <span className="ml-2 text-xs text-slate-500">
+                      {s.currentClass?.label}
+                    </span>
+                  </div>
+                  <LevelBadge level={s.currentBehaviorLevel} />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Students at L3+ */}
       {(() => {

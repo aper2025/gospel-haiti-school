@@ -7,6 +7,7 @@ import {
   UserCog, BarChart3, AlertTriangle, TrendingUp,
 } from "lucide-react";
 import { DailySummary } from "./daily-summary";
+import { DashboardCharts } from "./dashboard-charts";
 
 export default async function DashboardHome() {
   const user = await requireAuth();
@@ -184,6 +185,29 @@ export default async function DashboardHome() {
 
       {/* Daily Summary */}
       <DailySummary staffSummary={staffSummary} classSummaries={classSummaries} />
+
+      {/* Charts */}
+      <DashboardCharts
+        attendanceByClass={classSummaries.map((c) => ({
+          label: c.label,
+          present: c.attendance.present,
+          absent: c.attendance.absent,
+          late: c.attendance.late,
+        }))}
+        groupDistribution={[
+          { name: "G1 (80%+)", value: groupDist.G1, color: "#10b981" },
+          { name: "G2 (70-79%)", value: groupDist.G2, color: "#3b82f6" },
+          { name: "G3 (40-69%)", value: groupDist.G3, color: "#f59e0b" },
+          { name: "G4 (<40%)", value: groupDist.G4, color: "#ef4444" },
+        ]}
+        behaviorOverview={["L0", "L1", "L2", "L3", "L4", "L5", "L6"].map((level) => ({
+          level,
+          count: classSummaries.reduce(
+            (sum, c) => sum + c.behaviorStudents.filter((s) => s.level === level).length,
+            0,
+          ),
+        }))}
+      />
 
       {/* Key metrics cards */}
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

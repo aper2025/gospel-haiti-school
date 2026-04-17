@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getCurrentUser, type SessionUser } from "@/lib/auth";
 import { Sidebar } from "./sidebar";
+import { SuggestionForm } from "@/components/SuggestionForm";
 
 export default async function DashboardLayout({
   children,
@@ -36,12 +37,7 @@ export default async function DashboardLayout({
           {children}
         </div>
         <footer className="mt-12 border-t border-slate-200 pt-4 pb-6 text-center">
-          <a
-            href="mailto:ap@gospelhaiti.org?subject=GHIS%20Platform%20Suggestion"
-            className="text-xs text-slate-400 hover:text-blue-600 transition-colors"
-          >
-            Suggestions d'amélioration? Contactez-nous
-          </a>
+          <SuggestionForm />
         </footer>
       </main>
     </div>
