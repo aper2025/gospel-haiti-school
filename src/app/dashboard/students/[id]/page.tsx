@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole } from "@/lib/auth";
+import { formatDateFR, HAITI_TZ } from "@/lib/timezone";
 import { BehaviorLevelEditor } from "./behavior-level-editor";
 
 export default async function StudentDetailPage({
@@ -71,7 +72,7 @@ export default async function StudentDetailPage({
           <Row label="Genre" value={student.gender ?? "—"} />
           <Row
             label="Date de naissance"
-            value={student.dateOfBirth ? student.dateOfBirth.toLocaleDateString("fr-FR") : "—"}
+            value={student.dateOfBirth ? student.dateOfBirth.toLocaleDateString("fr-FR", { timeZone: "UTC" }) : "—"}
           />
           <Row label="Acte de naissance" value={student.birthCertOnFile ? "Oui" : "Non"} />
         </Card>
@@ -136,7 +137,7 @@ export default async function StudentDetailPage({
                     {ch.reason && <p className="text-xs text-slate-500 mt-0.5">{ch.reason}</p>}
                   </div>
                   <span className="text-xs text-slate-400 shrink-0 ml-2">
-                    {ch.changedAt.toLocaleDateString("fr-FR")}
+                    {formatDateFR(ch.changedAt)}
                   </span>
                 </div>
               ))}

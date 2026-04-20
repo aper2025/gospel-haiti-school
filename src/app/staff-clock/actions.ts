@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { haitiDateOnly } from "@/lib/timezone";
 
 export async function staffClockAction(staffId: string, pin: string, action: "in" | "out") {
   // Verify PIN
@@ -14,7 +15,7 @@ export async function staffClockAction(staffId: string, pin: string, action: "in
   if (!staff.staffPin || staff.staffPin !== pin) return { error: "invalid_pin" };
 
   const now = new Date();
-  const dateOnly = new Date(now.toISOString().split("T")[0]);
+  const dateOnly = haitiDateOnly();
 
   if (action === "in") {
     await prisma.timeClockEntry.upsert({

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import { haitiDateOnly } from "@/lib/timezone";
 
 export async function signIn() {
   const user = await requireAuth();
@@ -13,7 +14,7 @@ export async function signIn() {
   if (!profile?.staffId) return { error: "no_staff_record" };
 
   const today = new Date();
-  const dateOnly = new Date(today.toISOString().split("T")[0]);
+  const dateOnly = haitiDateOnly();
 
   await prisma.timeClockEntry.upsert({
     where: { staffId_date: { staffId: profile.staffId, date: dateOnly } },
@@ -38,7 +39,7 @@ export async function signOut() {
   if (!profile?.staffId) return { error: "no_staff_record" };
 
   const today = new Date();
-  const dateOnly = new Date(today.toISOString().split("T")[0]);
+  const dateOnly = haitiDateOnly();
 
   const entry = await prisma.timeClockEntry.findUnique({
     where: { staffId_date: { staffId: profile.staffId, date: dateOnly } },

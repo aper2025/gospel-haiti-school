@@ -34,7 +34,7 @@ export function ObservationForm({ staffId, translations: t }: Props) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-slate-600">Date</label>
-          <input type="date" name="date" required defaultValue={new Date().toISOString().split("T")[0]}
+          <input type="date" name="date" required defaultValue={new Date().toLocaleDateString("en-CA", { timeZone: "America/Port-au-Prince" })}
             className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
         </div>
         <div>

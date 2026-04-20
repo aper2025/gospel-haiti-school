@@ -140,7 +140,7 @@ export default async function StaffPage({
                     {lr.staff.lastName}, {lr.staff.firstName}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {lr.type} &middot; {lr.startDate.toLocaleDateString("fr-FR")} — {lr.endDate.toLocaleDateString("fr-FR")}
+                    {lr.type} &middot; {lr.startDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })} — {lr.endDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })}
                   </p>
                   {lr.reason && <p className="text-xs text-slate-500 mt-0.5">{lr.reason}</p>}
                 </div>
@@ -165,7 +165,7 @@ export default async function StaffPage({
                   <p className="text-sm font-medium text-slate-900">
                     {obs.staff.lastName}, {obs.staff.firstName}
                   </p>
-                  <span className="text-xs text-slate-500">{obs.date.toLocaleDateString("fr-FR")}</span>
+                  <span className="text-xs text-slate-500">{obs.date.toLocaleDateString("fr-FR", { timeZone: "UTC" })}</span>
                 </div>
                 {obs.score != null && (
                   <p className="text-xs text-slate-500 mt-1">Score: {obs.score}</p>

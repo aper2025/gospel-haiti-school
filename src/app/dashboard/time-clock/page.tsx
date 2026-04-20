@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole } from "@/lib/auth";
+import { haitiDateOnly, formatTimeFR, formatDateFR } from "@/lib/timezone";
 import { TimeClockActions } from "./time-clock-actions";
 import { AdminEntryForm } from "./admin-entry-form";
 
@@ -14,8 +15,7 @@ export default async function TimeClockPage() {
     select: { staffId: true },
   });
 
-  const today = new Date();
-  const dateOnly = new Date(today.toISOString().split("T")[0]);
+  const dateOnly = haitiDateOnly();
 
   // Current user's entry for today
   let myEntry = null;
@@ -58,9 +58,9 @@ export default async function TimeClockPage() {
             <div className="text-sm text-slate-600">
               {myEntry?.signInAt ? (
                 <>
-                  {t("timeClock.signIn")}: {myEntry.signInAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                  {t("timeClock.signIn")}: {formatTimeFR(myEntry.signInAt)}
                   {myEntry.signOutAt && (
-                    <> &middot; {t("timeClock.signOut")}: {myEntry.signOutAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                    <> &middot; {t("timeClock.signOut")}: {formatTimeFR(myEntry.signOutAt)}
                       &middot; {myEntry.hoursWorked?.toString()}h
                     </>
                   )}
@@ -93,7 +93,7 @@ export default async function TimeClockPage() {
       {isAdmin && (
         <div className="mt-6">
           <h2 className="text-sm font-semibold text-slate-700 mb-3">
-            Aujourd'hui — {dateOnly.toLocaleDateString("fr-FR")}
+            Aujourd'hui — {formatDateFR(dateOnly)}
           </h2>
           <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
             <table className="min-w-full divide-y divide-slate-200">
@@ -115,10 +115,10 @@ export default async function TimeClockPage() {
                         {s.lastName}, {s.firstName}
                       </td>
                       <td className="px-4 py-2.5 text-center text-sm text-slate-600">
-                        {entry?.signInAt?.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) ?? "—"}
+                        {entry?.signInAt ? formatTimeFR(entry.signInAt) : "—"}
                       </td>
                       <td className="px-4 py-2.5 text-center text-sm text-slate-600">
-                        {entry?.signOutAt?.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) ?? "—"}
+                        {entry?.signOutAt ? formatTimeFR(entry.signOutAt) : "—"}
                       </td>
                       <td className="px-4 py-2.5 text-center text-sm text-slate-600">
                         {entry?.hoursWorked?.toString() ?? "—"}

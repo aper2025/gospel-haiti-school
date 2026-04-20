@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import { haitiWeekStart } from "@/lib/timezone";
 import { GradebookView } from "./gradebook-view";
 
 // Lower grades (KG2-4F): single homeroom teacher, all subjects
@@ -72,12 +73,7 @@ export default async function GradebookPage({
   }
 
   // Weekly placements
-  const now = new Date();
-  const day = now.getUTCDay();
-  const diff = day === 0 ? 6 : day - 1;
-  const monday = new Date(now);
-  monday.setUTCDate(monday.getUTCDate() - diff);
-  const weekStart = monday.toISOString().split("T")[0];
+  const weekStart = haitiWeekStart();
 
   let placements: {
     studentId: string;

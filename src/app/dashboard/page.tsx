@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole } from "@/lib/auth";
+import { haitiDateOnly, haitiWeekStart, formatDateFR, formatTimeFR } from "@/lib/timezone";
 import {
   Users, ClipboardCheck, BookOpen, ShieldAlert, Clock, Wallet,
   UserCog, BarChart3, AlertTriangle, TrendingUp,
@@ -15,7 +16,7 @@ export default async function DashboardHome() {
   const isAdmin = hasRole(user, "DIRECTOR", "ADMIN");
 
   const today = new Date();
-  const dateOnly = new Date(today.toISOString().split("T")[0]);
+  const dateOnly = haitiDateOnly();
 
   const totalStudents = await prisma.student.count({ where: { enrollmentStatus: "ACTIVE" } });
   const attendanceToday = await prisma.attendance.count({ where: { date: dateOnly } });
@@ -49,11 +50,7 @@ export default async function DashboardHome() {
 
   const retentionWatchCount = await prisma.retentionWatch.count({ where: { resolvedAt: null } });
 
-  const day = today.getUTCDay();
-  const diff = day === 0 ? 6 : day - 1;
-  const monday = new Date(today);
-  monday.setUTCDate(monday.getUTCDate() - diff);
-  const weekStart = new Date(monday.toISOString().split("T")[0]);
+  const weekStart = new Date(haitiWeekStart());
 
   const placements = await prisma.weeklyGroupPlacement.findMany({
     where: { weekStart },
@@ -80,8 +77,8 @@ export default async function DashboardHome() {
   const clockedStaffIds = new Set(todayClockEntries.map((e) => e.staffId));
   const staffEntries = todayClockEntries.map((e) => ({
     name: `${e.staff.firstName} ${e.staff.lastName}`,
-    signInAt: e.signInAt?.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) ?? null,
-    signOutAt: e.signOutAt?.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) ?? null,
+    signInAt: e.signInAt ? formatTimeFR(e.signInAt) : null,
+    signOutAt: e.signOutAt ? formatTimeFR(e.signOutAt) : null,
     hoursWorked: e.hoursWorked ? Number(e.hoursWorked) : null,
   }));
   const notSignedInStaff = allStaff
@@ -161,7 +158,7 @@ export default async function DashboardHome() {
           <div>
             <h1 className="text-2xl font-bold">{t("auth.welcome")}</h1>
             <p className="mt-1 text-blue-100 text-sm">
-              {today.toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+              {formatDateFR(today, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
             </p>
           </div>
           {unreadNotifs > 0 && (

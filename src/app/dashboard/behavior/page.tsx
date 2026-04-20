@@ -195,7 +195,7 @@ export default async function BehaviorPage({
                     </span>
                   </div>
                   <span className="text-xs text-slate-500">
-                    {inc.date.toLocaleDateString("fr-FR")}
+                    {inc.date.toLocaleDateString("fr-FR", { timeZone: "UTC" })}
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-slate-600 line-clamp-2">

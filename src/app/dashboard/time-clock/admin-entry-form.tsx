@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { adminRecordEntry } from "./actions";
+import { HAITI_TZ } from "@/lib/timezone";
 
 type Props = {
   staff: { id: string; firstName: string; lastName: string }[];
@@ -28,7 +29,7 @@ export function AdminEntryForm({ staff, translations: t }: Props) {
       </div>
       <div>
         <label className="block text-xs font-medium text-slate-500">Date</label>
-        <input type="date" name="date" required defaultValue={new Date().toISOString().split("T")[0]}
+        <input type="date" name="date" required defaultValue={new Date().toLocaleDateString("en-CA", { timeZone: HAITI_TZ })}
           className="mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900" />
       </div>
       <div>

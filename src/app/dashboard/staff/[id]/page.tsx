@@ -56,7 +56,7 @@ export default async function StaffDetailPage({
         <Card title="Informations">
           <Row label="Genre" value={staff.gender ?? "—"} />
           <Row label="Téléphone" value={staff.phone ?? "—"} />
-          <Row label="Date de début" value={staff.startDate?.toLocaleDateString("fr-FR") ?? "—"} />
+          <Row label="Date de début" value={staff.startDate?.toLocaleDateString("fr-FR", { timeZone: "UTC" }) ?? "—"} />
           <Row label="Contrat" value={staff.contractType ?? "—"} />
           <Row label="Code PIN" value={staff.staffPin ?? "—"} />
           <Row label="Performance" value={t(`staff.performance.${staff.performanceStatus}`)} />
@@ -102,7 +102,7 @@ export default async function StaffDetailPage({
                     <span className="font-medium text-slate-700">
                       {obs.observer.firstName} {obs.observer.lastName}
                     </span>
-                    <span className="text-xs text-slate-500">{obs.date.toLocaleDateString("fr-FR")}</span>
+                    <span className="text-xs text-slate-500">{obs.date.toLocaleDateString("fr-FR", { timeZone: "UTC" })}</span>
                   </div>
                   {obs.score != null && <p className="text-slate-500">Score: {obs.score}</p>}
                   {obs.strengths && <p className="text-green-700">{obs.strengths}</p>}
@@ -125,7 +125,7 @@ export default async function StaffDetailPage({
                   <div>
                     <span className="font-medium text-slate-700">{lr.type}</span>
                     <span className="text-slate-500 ml-2">
-                      {lr.startDate.toLocaleDateString("fr-FR")} — {lr.endDate.toLocaleDateString("fr-FR")}
+                      {lr.startDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })} — {lr.endDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })}
                     </span>
                   </div>
                   <LeaveStatusBadge status={lr.status} />

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
+import { haitiDateOnly, haitiWeekStart, formatDateFR, formatTimeFR } from "@/lib/timezone";
 import { TrimestreForm } from "./trimestre-form";
 import { BatchGenerateButton } from "./batch-generate-button";
 import { TranscriptButton } from "./transcript-button";
@@ -20,7 +21,7 @@ export default async function ReportsPage({
 
   const activeYear = await prisma.schoolYear.findFirst({ where: { isActive: true } });
   const today = new Date();
-  const dateOnly = new Date(today.toISOString().split("T")[0]);
+  const dateOnly = haitiDateOnly();
 
   const classes = await prisma.class.findMany({
     where: { excluded: false },
@@ -61,11 +62,7 @@ export default async function ReportsPage({
   });
 
   // ── Weekly data ──
-  const day = today.getUTCDay();
-  const diff = day === 0 ? 6 : day - 1;
-  const monday = new Date(today);
-  monday.setUTCDate(monday.getUTCDate() - diff);
-  const weekStart = monday.toISOString().split("T")[0];
+  const weekStart = haitiWeekStart();
   const selectedWeek = params.week || weekStart;
 
   const weeklySubmissions = activeYear
@@ -83,9 +80,10 @@ export default async function ReportsPage({
     ["F5", "F6", "F7", "F8", "F9"].includes(s.classCode),
   );
 
-  // ── Monthly data ──
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  // ── Monthly data (based on Haiti date) ──
+  const haitiDate = new Date(haitiDateOnly());
+  const monthStart = new Date(Date.UTC(haitiDate.getUTCFullYear(), haitiDate.getUTCMonth(), 1));
+  const monthEnd = new Date(Date.UTC(haitiDate.getUTCFullYear(), haitiDate.getUTCMonth() + 1, 0));
 
   const monthlyAttendance = await prisma.attendance.groupBy({
     by: ["code"],
@@ -161,7 +159,7 @@ export default async function ReportsPage({
       {tab === "daily" && (
         <div className="mt-4 space-y-6">
           <p className="text-sm text-slate-500">
-            {today.toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+            {formatDateFR(today, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -200,8 +198,8 @@ export default async function ReportsPage({
                 <div key={e.id} className="flex justify-between py-1.5 text-sm">
                   <span className="text-slate-900">{e.staff.lastName}, {e.staff.firstName}</span>
                   <span className="text-slate-500">
-                    {e.signInAt?.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                    {e.signOutAt && ` — ${e.signOutAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`}
+                    {e.signInAt ? formatTimeFR(e.signInAt) : ""}
+                    {e.signOutAt && ` — ${formatTimeFR(e.signOutAt)}`}
                   </span>
                 </div>
               ))
@@ -244,7 +242,7 @@ export default async function ReportsPage({
       {tab === "monthly" && (
         <div className="mt-4 space-y-6">
           <p className="text-sm text-slate-500">
-            {today.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+            {formatDateFR(today, { month: "long", year: "numeric" })}
           </p>
 
           <Section title="Présence ce mois">
@@ -322,7 +320,7 @@ export default async function ReportsPage({
                           </td>
                           <td className="px-4 py-3 text-center text-sm text-slate-600">{rc.entries.length}</td>
                           <td className="px-4 py-3 text-center text-xs text-slate-500">
-                            {rc.generatedAt?.toLocaleDateString("fr-FR") ?? "—"}
+                            {rc.generatedAt ? formatDateFR(rc.generatedAt) : "—"}
                           </td>
                         </tr>
                       ))}

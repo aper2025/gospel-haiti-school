@@ -67,7 +67,7 @@ export function GradebookView({
   const [showEntry, setShowEntry] = useState(false);
   const [entryType, setEntryType] = useState("PETITE_EVALUATION");
   const [entrySubject, setEntrySubject] = useState(selectedSubject || subjects[0]);
-  const [entryDate, setEntryDate] = useState(new Date().toISOString().split("T")[0]);
+  const [entryDate, setEntryDate] = useState(new Date().toLocaleDateString("en-CA", { timeZone: "America/Port-au-Prince" }));
   const [scores, setScores] = useState<Record<string, string>>({});
 
   const updateParam = useCallback(

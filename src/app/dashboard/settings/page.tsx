@@ -35,7 +35,7 @@ export default async function SettingsPage() {
               <span className="text-slate-900 font-medium">{y.label}</span>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500">
-                  {y.startDate.toLocaleDateString("fr-FR")} — {y.endDate.toLocaleDateString("fr-FR")}
+                  {y.startDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })} — {y.endDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })}
                 </span>
                 {y.isActive && (
                   <span className="inline-flex rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-xs font-medium">

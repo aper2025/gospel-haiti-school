@@ -180,8 +180,8 @@ export default async function SchedulesPage({
                     </span>
                     <span className="text-sm font-medium text-slate-900">{ev.title}</span>
                     <span className="text-xs text-slate-500 ml-2">
-                      {ev.startDate.toLocaleDateString("fr-FR")}
-                      {ev.endDate && ` — ${ev.endDate.toLocaleDateString("fr-FR")}`}
+                      {ev.startDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })}
+                      {ev.endDate && ` — ${ev.endDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })}`}
                     </span>
                   </div>
                 </div>

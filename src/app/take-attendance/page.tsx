@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { haitiToday, haitiDateOnly, formatDateFR } from "@/lib/timezone";
 import { TakeAttendanceClient } from "./client";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +12,8 @@ export default async function TakeAttendancePage() {
   });
 
   const today = new Date();
-  const dateOnly = new Date(today.toISOString().split("T")[0]);
-  const dateStr = today.toISOString().split("T")[0];
+  const dateOnly = haitiDateOnly();
+  const dateStr = haitiToday();
 
   // Get all students grouped by class
   const students = await prisma.student.findMany({
@@ -53,7 +54,7 @@ export default async function TakeAttendancePage() {
         existingMarks={existingMap}
         classCounts={classCounts}
         date={dateStr}
-        dateDisplay={today.toLocaleDateString("fr-FR", {
+        dateDisplay={formatDateFR(today, {
           weekday: "long",
           year: "numeric",
           month: "long",

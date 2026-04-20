@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import { haitiToday } from "@/lib/timezone";
 import { AttendanceView } from "./attendance-view";
 
 export default async function AttendancePage({
@@ -12,7 +13,7 @@ export default async function AttendancePage({
   const t = await getTranslations();
   const params = await searchParams;
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = haitiToday();
   const selectedDate = params.date || today;
 
   // Get user's staff record for staffId

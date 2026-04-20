@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { haitiDateOnly, formatDateFR } from "@/lib/timezone";
 import { StaffClockClient } from "./client";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ export default async function StaffClockPage() {
   });
 
   const today = new Date();
-  const dateOnly = new Date(today.toISOString().split("T")[0]);
+  const dateOnly = haitiDateOnly();
 
   const todayEntries = await prisma.timeClockEntry.findMany({
     where: { date: dateOnly },
@@ -37,7 +38,7 @@ export default async function StaffClockPage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Pointage du personnel</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {today.toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+            {formatDateFR(today, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
         <StaffClockClient staff={staff} statusMap={statusMap} />
